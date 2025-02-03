@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "example.com/ogrex/cli"
 
 func main() {
-	fmt.Println("Initial")
+	cli.SetupCli()
 }
