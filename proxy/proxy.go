@@ -53,7 +53,7 @@ func (p *Proxy) setupRedirectHandlersForService(serviceUrl string) {
 		proxy.Director = func(r *http.Request) {
 			r.URL.Scheme = targetUrl.Scheme
 			r.URL.Host = targetUrl.Host
-			// r.URL.Path = targetUrlParsed.Path + r.URL.Path
+			r.URL.Path = targetUrl.Path
 			r.Host = targetUrl.Host
 		}
 
