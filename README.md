@@ -1,2 +1,2 @@
 # ogrex
-ogrex - stupid simple golang CLI
+ogrex - stupid simple golang reversed proxy
