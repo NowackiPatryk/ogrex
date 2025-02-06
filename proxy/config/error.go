@@ -1,6 +1,6 @@
 package config
 
-type couldNotReadConfigError struct {}
+type couldNotReadConfigError struct{}
 
 func (err *couldNotReadConfigError) Error() string {
 	return "Could not read .yaml config file"

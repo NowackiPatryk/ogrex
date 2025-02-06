@@ -7,9 +7,9 @@ var rootCommand = &cobra.Command{
 }
 
 var runCommand = &cobra.Command{
-	Use: "run",
+	Use:   "run",
 	Short: "Runs with given .yaml config file path",
-	Run: handleRunCommand,
+	Run:   handleRunCommand,
 }
 
 func init() {

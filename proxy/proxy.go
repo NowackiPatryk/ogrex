@@ -3,21 +3,23 @@ package proxy
 import (
 	"fmt"
 	"log"
-	"math/rand/v2"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 
 	"example.com/ogrex/proxy/config"
+	"example.com/ogrex/utils"
 )
 
 type Proxy struct {
-	config config.Config
+	config         config.Config
+	balancerQueues map[string]*utils.FifoQueue[url.URL]
 }
 
 func NewProxy(proxyConfig config.Config) *Proxy {
 	return &Proxy{
-		config: proxyConfig,
+		config:         proxyConfig,
+		balancerQueues: make(map[string]*utils.FifoQueue[url.URL]),
 	}
 }
 
@@ -32,23 +34,56 @@ func (p *Proxy) Run() {
 
 func (p *Proxy) setupServicesHandlers(services map[string]config.ServiceConfig) {
 	for _, service := range services {
-			targetUrl := service.Services[rand.IntN(len(service.Services))]
-
-			targetUrlParsed, err := url.Parse(targetUrl)
-			if err != nil {
-				panic("Cant parse url")
-			}
-
-			proxy := httputil.NewSingleHostReverseProxy(targetUrlParsed)
-			proxy.Director = func(r *http.Request) {
-				r.URL.Scheme = targetUrlParsed.Scheme
-				r.URL.Host = targetUrlParsed.Host
-				r.URL.Path = targetUrlParsed.Path + r.URL.Path
-				r.Host = targetUrlParsed.Host
-			}
-
-		http.Handle(service.Url, proxy)
+		parsedUrls := p.parseServiceUrls(service.Services)
+		p.setupBalancingForService(service.Url, parsedUrls)
+		p.setupRedirectHandlersForService(service.Url)
 	}
 }
 
+func (p *Proxy) setupBalancingForService(serviceUrl string, parsedUrls []url.URL) {
+	balancerQueue := utils.NewFifoQueue(parsedUrls...)
+	p.balancerQueues[serviceUrl] = balancerQueue
+}
 
+func (p *Proxy) setupRedirectHandlersForService(serviceUrl string) {
+	http.HandleFunc(serviceUrl, func(w http.ResponseWriter, r *http.Request) {
+		targetUrl := p.getTargetUrlForService(serviceUrl)
+
+		proxy := httputil.NewSingleHostReverseProxy(&targetUrl)
+		proxy.Director = func(r *http.Request) {
+			r.URL.Scheme = targetUrl.Scheme
+			r.URL.Host = targetUrl.Host
+			// r.URL.Path = targetUrlParsed.Path + r.URL.Path
+			r.Host = targetUrl.Host
+		}
+
+		proxy.ServeHTTP(w, r)
+	})
+}
+
+func (p *Proxy) getTargetUrlForService(serviceUrl string) url.URL {
+	queue := p.balancerQueues[serviceUrl]
+
+	if queue.GetLength() == 1 {
+		nextUrl, _ := queue.Peek()
+		return nextUrl
+	}
+
+	nextUrl, _ := queue.TakeLast()
+	queue.Insert(nextUrl)
+	return nextUrl
+}
+
+func (p *Proxy) parseServiceUrls(serviceUrls []string) []url.URL {
+	parsedUrls := []url.URL{}
+
+	for _, stringUrl := range serviceUrls {
+		targetUrlParsed, err := url.Parse(stringUrl)
+		if err != nil {
+			panic("Cant parse url")
+		}
+		parsedUrls = append(parsedUrls, *targetUrlParsed)
+	}
+
+	return parsedUrls
+}

@@ -10,6 +10,6 @@ type ServerConfig struct {
 }
 
 type Config struct {
-	Server ServerConfig `yaml:"server"`
+	Server   ServerConfig             `yaml:"server"`
 	Services map[string]ServiceConfig `yaml:",inline"`
 }
