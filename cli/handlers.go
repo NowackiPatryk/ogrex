@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 
-	"example.com/ogrex/configreader"
+	"example.com/ogrex/proxy"
+	"example.com/ogrex/proxy/config"
 	"github.com/spf13/cobra"
 )
 
@@ -15,9 +17,10 @@ func handleRunCommand(cmd *cobra.Command, args []string) {
 
 	path := args[0]
 
-	config, err := configreader.ReadYamlConfigFromPath(path)
-	if err, ok := err.(*configreader.CouldNotReadConfigError); ok {
-		fmt.Println(err.Error())
+	proxyConfig, err := config.ReadYamlConfigFromPath(path)
+
+	if errors.Is(err, &config.CouldNotReadConfigError) {
+		fmt.Println("Config can't be read")
 		return
 	}
 
@@ -25,5 +28,6 @@ func handleRunCommand(cmd *cobra.Command, args []string) {
 		panic("Unknown error occured")
 	}
 
-	fmt.Println("Config successfully loaded: ", config)
+	proxy := proxy.NewProxy(proxyConfig)
+	proxy.Run()
 }

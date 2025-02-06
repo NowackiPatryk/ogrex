@@ -1,4 +1,4 @@
-package configreader
+package config
 
 import (
 	"os"
@@ -6,13 +6,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func ReadYamlConfigFromPath(path string) (config, error) {
+func ReadYamlConfigFromPath(path string) (Config, error) {
 	fileContent, err := os.ReadFile(path)
 	if err != nil {
-		return config{}, &CouldNotReadConfigError{}
+		return Config{}, &CouldNotReadConfigError
 	}
 
-	var config config
+	var config Config
 	yaml.Unmarshal(fileContent, &config)
 
 	return config, nil
