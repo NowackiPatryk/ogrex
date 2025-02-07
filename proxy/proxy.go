@@ -8,17 +8,20 @@ import (
 	"net/url"
 
 	"example.com/ogrex/proxy/config"
+	"example.com/ogrex/proxy/statistics"
 	"example.com/ogrex/utils"
 )
 
 type Proxy struct {
 	config         config.Config
+	statistics     statistics.ProxyStatistics
 	balancerQueues map[string]*utils.FifoQueue[url.URL]
 }
 
 func NewProxy(proxyConfig config.Config) *Proxy {
 	return &Proxy{
 		config:         proxyConfig,
+		statistics:     *statistics.NewProxyStatistics(),
 		balancerQueues: make(map[string]*utils.FifoQueue[url.URL]),
 	}
 }
@@ -58,6 +61,7 @@ func (p *Proxy) setupRedirectHandlersForService(serviceUrl string) {
 		}
 
 		proxy.ServeHTTP(w, r)
+		p.statistics.AddCount(targetUrl)
 	})
 }
 
