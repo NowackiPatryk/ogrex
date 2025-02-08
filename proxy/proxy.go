@@ -52,16 +52,17 @@ func (p *Proxy) setupRedirectHandlersForService(serviceUrl string) {
 	http.HandleFunc(serviceUrl, func(w http.ResponseWriter, r *http.Request) {
 		targetUrl := p.getTargetUrlForService(serviceUrl)
 
-		proxy := httputil.NewSingleHostReverseProxy(&targetUrl)
-		proxy.Director = func(r *http.Request) {
-			r.URL.Scheme = targetUrl.Scheme
-			r.URL.Host = targetUrl.Host
-			r.URL.Path = targetUrl.Path
-			r.Host = targetUrl.Host
-		}
+		p.statistics.Gather(targetUrl, func() {
+			proxy := httputil.NewSingleHostReverseProxy(&targetUrl)
+			proxy.Director = func(r *http.Request) {
+				r.URL.Scheme = targetUrl.Scheme
+				r.URL.Host = targetUrl.Host
+				r.URL.Path = targetUrl.Path
+				r.Host = targetUrl.Host
+			}
 
-		proxy.ServeHTTP(w, r)
-		p.statistics.AddCount(targetUrl)
+			proxy.ServeHTTP(w, r)
+		})
 	})
 }
 
