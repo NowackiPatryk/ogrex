@@ -57,27 +57,27 @@ func (s *ProxyStatistics) saveMeasurement(measurement responseTimeMeasurement) {
 	}
 
 	measurementVal.times = append(measurementVal.times, measurement.measurement)
-	measurementVal.mean += measurement.measurement / int64(len(measurementVal.times) + 1)
+	measurementVal.mean += measurement.measurement / int64(len(measurementVal.times)+1)
 
 	s.ResponseTime[measurement.measuredUrl] = measurementVal
 }
 
 type responseTime struct {
 	times []int64
-	mean int64
+	mean  int64
 }
 
 func newResponseTime(time int64) *responseTime {
 	return &responseTime{
 		times: []int64{time},
-		mean: time,
+		mean:  time,
 	}
 }
 
 type responseTimeMeasurement struct {
 	measuredUrl url.URL
-	beginTime time.Time
-	measurement	int64
+	beginTime   time.Time
+	measurement int64
 }
 
 func newResponseTimeMeasurement(url url.URL) *responseTimeMeasurement {
@@ -90,10 +90,6 @@ func (m *responseTimeMeasurement) Begin() {
 	m.beginTime = time.Now()
 }
 
-func (m* responseTimeMeasurement) End() {
+func (m *responseTimeMeasurement) End() {
 	m.measurement = time.Since(m.beginTime).Milliseconds()
 }
-
-
-
-
